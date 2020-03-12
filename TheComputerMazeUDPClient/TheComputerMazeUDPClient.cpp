@@ -1,5 +1,10 @@
-// TheComputerMazeUDPClient.cpp : Defines the entry point for the console application.
-//
+/*
+*Author: Faris Mufti (19044237)
+*Created 05 March 2020
+*Revised: 12 March 2020 - Added banner
+*Description: The Computer Maze
+*User advice: none
+*/
 
 #include "stdafx.h"
 #include <winsock2.h>
