@@ -12,9 +12,9 @@
 
 #pragma comment(lib, "wsock32.lib")
 
-#define STUDENT_NUMBER		"12345678"
-#define STUDENT_FIRSTNAME	"Fred"
-#define STUDENT_FAMILYNAME	"Bloggs"
+#define STUDENT_NUMBER		"19044237"
+#define STUDENT_FIRSTNAME	"Faris"
+#define STUDENT_FAMILYNAME	"Mufti"
 
 #define IP_ADDRESS_SERVER	"127.0.0.1"
 //#define IP_ADDRESS_SERVER "164.11.80.69"
