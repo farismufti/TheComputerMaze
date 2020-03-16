@@ -695,7 +695,7 @@ void communicate_with_server()
 				printRoom();
 				printOptions();
 
-				system("timeout /t 60");
+				system("timeout /t 60"); //Comment out to allow the program to run continuously
 
 				yourMove();
 			}
@@ -764,4 +764,3 @@ int main()
 
 	return 0;
 }
-
