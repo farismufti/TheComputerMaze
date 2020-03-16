@@ -32,6 +32,42 @@
 #define MAX_ITEMS_IN_ROOM		20
 #define MAX_ITEMS_IN_BACKPACK	50
 
+#define OPTION_BASE_FOR_READS 200
+#define OPTION_BASE_FOR_PICKUPS 500
+#define OPTION_BASE_FOR_DROPS 800
+#define OPTION_BASE_FOR_DOS 1100
+#define OPTION_BASE_FOR_EVENTS 1300
+
+#define MAX_ROOMS 500
+char rooms_visited[MAX_ROOMS][5];
+
+#define MAX_KEYS
+
+enum typeofroom
+{
+	ROOM_NONE = 0,
+	ROOM_LECTURE_SMALL = 1,
+	ROOM_LECTURE_MEDIUM = 2,
+	ROOM_LECTURE_LARGE = 3,
+	ROOM_CORRIDOR = 4,
+	ROOM_LAB_SMALL = 5,
+	ROOM_LAB_MEDIUM = 6,
+	ROOM_LAB_LARGE = 7,
+	ROOM_MEETING_ROOM = 8,
+	ROOM_SEMINAR = 9,
+	ROOM_HIVE = 10, //one per floor
+	ROOM_COFFEESHOP = 11, //one
+	ROOM_LIBRARY = 12, //only one
+	ROOM_SHOP_SELL = 13,
+	ROOM_SHOP_BUY = 14,
+	ROOM_SHOP_BUYSELL = 15,
+	ROOM_OFFICE = 16, //maybe only one door
+	ROOM_LOBBY = 17, //Only one
+	ROOM_EXIT = 18, //only one
+	ROOM_STAIRS = 19,
+	ROOM_ENTRANCE = 20 //only one
+};
+
 
 enum directions
 {
@@ -152,23 +188,126 @@ void sentOption(int option, int key)
 /********* Your tactics code starts here *********************/
 /*************************************************************/
 
+#define OPTION_MOVE_NORTH 1
+#define OPTION_MOVE_SOUTH 2
+#define OPTION_MOVE_EAST 3
+#define OPTION_MOVE_WEST 4
+#define OPTION_MOVE_UP 5
+#define OPTION_MOVE_DOWN 6
+
+#define OPTION_UNLOCK_NORTH 7
+#define OPTION_UNLOCK_SOUTH 8
+#define OPTION_UNLOCK_EAST 9
+#define OPTION_UNLOCK_WEST 10
+
+
 int option_count = 0;
 char room_name[10] = " ";
 
+int rooms_recorded = 0;
+
+int saved_keys[MAX_KEYS]; //What is the max number of keys (check definition)
+int number_of_saved_keys = 0;
+
+int move = 0;
+
+int tryKey = -1;
+
+int last_direction = DIRECTION_NORTH;
+
 void yourMove()
 {
+	if (room.direction[DIRECTION_NORTH] == DIRECTION_OPEN)
+	{
+		sentOption(OPTION_MOVE_NORTH, 0);
+		last_direction = DIRECTION_NORTH;
+	}
+	else if (room.direction[DIRECTION_SOUTH] == DIRECTION_OPEN)
+	{
+		sentOption(OPTION_MOVE_SOUTH, 0);
+		last_direction = DIRECTION_SOUTH;
+	}
+	else if (room.direction[DIRECTION_EAST] == DIRECTION_OPEN)
+	{
+		sentOption(OPTION_MOVE_EAST, 0);
+		last_direction = DIRECTION_EAST;
+	}
+	else if (room.direction[DIRECTION_WEST] == DIRECTION_OPEN)
+	{
+		sentOption(OPTION_MOVE_WEST, 0);
+		last_direction = DIRECTION_WEST;
+	}
+	else if (room.direction[DIRECTION_UP] == DIRECTION_OPEN)
+	{
+		sentOption(OPTION_MOVE_UP, 0);
+		last_direction = DIRECTION_UP;
+	}
+	else if (room.direction[DIRECTION_DOWN] == DIRECTION_OPEN)
+	{
+		sentOption(OPTION_MOVE_DOWN, 0);
+		last_direction = DIRECTION_DOWN;
+	}
+	else
+	{
+		sentOption(OPTION_MOVE_NORTH, 0);
+		last_direction = DIRECTION_NORTH;
+	}
+	
+	
 	if (strcmp(room_name, room.name) != 0) option_count = 0;
-
 	sentOption(options[option_count], 0x1234);
-
 	option_count = (option_count + 1) % number_of_options;
+	
+	//strcpy(rooms_visited[rooms_recorded], Room.name); //Not to enter a visisted an explored room
+	//rooms_recorded++;                                 //****Error with Room.name****
+	
+	if (room.direction[DIRECTION_NORTH] == 0) //North door locked
+	{
+		tryKey++;
+		sentOption(7, tryKey);  //option , key
+	}
+	else if (room.direction[DIRECTION_NORTH] == 1) //North door unlocked
+	{
+		printf("Key = %04X\n", tryKey);
+		getchar();
+	}
+
+	switch (move)
+	{
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+		sentOption(OPTION_MOVE_WEST, 0);
+		break;
+
+	case 4:
+	case 5:
+		sentOption(OPTION_MOVE_SOUTH, 0);
+		break;
+
+	case 6:
+		sentOption(OPTION_BASE_FOR_PICKUPS + 38, 0); //Pick up gold bar (item 38)
+		break;
+
+	case 7:
+		sentOption(OPTION_BASE_FOR_READS + 61, 0); //Read Raspberry Pi code coobook (item 61)
+		break;
+
+	case 8:
+		sentOption(OPTION_BASE_FOR_PICKUPS + 61, 0); //Pickup Raspberry Pi coobook (item 61)
+		break;
+
+	default:
+		sentOption(OPTION_MOVE_WEST, 0); //Just do something
+		break;
+	}
 }
 
 
 /*************************************************************/
 /********* Your tactics code ends here ***********************/
 /*************************************************************/
-
 
 
 int getTokens(char* instring, char seperator)

@@ -1,14 +1,2 @@
-﻿Build started 23/08/2017 16:59:52.
-     1>Project "W:\Teaching\UFCF93-30-1\Assignments\Assignment 2 - TheComputerMazeUDPClient\TheComputerMazeUDPClient\TheComputerMazeUDPClient.vcxproj" on node 2 (Build target(s)).
-     1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _WINSOCK_DEPRECATED_NO_WARNINGS /D _CRT_SECURE_NO_WARNINGS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Yu"stdafx.h" /Fp"Debug\TheComputerMazeUDPClient.pch" /Fo"Debug\\" /Fd"Debug\vc140.pdb" /Gd /TP /analyze- /errorReport:prompt TheComputerMazeUDPClient.cpp
-         TheComputerMazeUDPClient.cpp
-       Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"W:\Teaching\UFCF93-30-1\Assignments\Assignment 2 - TheComputerMazeUDPClient\Debug\TheComputerMazeUDPClient.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"W:\Teaching\UFCF93-30-1\Assignments\Assignment 2 - TheComputerMazeUDPClient\Debug\TheComputerMazeUDPClient.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"W:\Teaching\UFCF93-30-1\Assignments\Assignment 2 - TheComputerMazeUDPClient\Debug\TheComputerMazeUDPClient.lib" /MACHINE:X86 Debug\stdafx.obj
-         Debug\TheComputerMazeUDPClient.obj
-         TheComputerMazeUDPClient.vcxproj -> W:\Teaching\UFCF93-30-1\Assignments\Assignment 2 - TheComputerMazeUDPClient\Debug\TheComputerMazeUDPClient.exe
-     1>Done Building Project "W:\Teaching\UFCF93-30-1\Assignments\Assignment 2 - TheComputerMazeUDPClient\TheComputerMazeUDPClient\TheComputerMazeUDPClient.vcxproj" (Build target(s)).
-
-Build succeeded.
-
-Time Elapsed 00:00:03.14
+﻿  TheComputerMazeUDPClient.cpp
+  TheComputerMazeUDPClient.vcxproj -> C:\Users\fmn2-mufti\Source\Repos\farismufti\TheComputerMaze\Debug\TheComputerMazeUDPClient.exe
