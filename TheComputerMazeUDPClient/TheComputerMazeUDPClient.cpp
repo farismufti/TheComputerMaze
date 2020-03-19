@@ -361,6 +361,22 @@ int getRandonMove()
 	return move;
 }
 
+int attendEvent()
+{
+	int move = -1; // default is no event found
+	int i;
+	int option;
+	for (i = 0; i < number_of_options; i++)
+	{
+		option = options[i];
+		if (option >= OPTION_BASE_FOR_EVENTS)  // then this is a valid event
+		{
+			move = option;
+			return move;
+		}
+	}
+	return move;
+}
 
 int pickupStuff()
 {
