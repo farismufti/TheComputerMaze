@@ -9,6 +9,7 @@
 #include "stdafx.h"
 #include <winsock2.h>
 #include <time.h>
+#include <conio.h>
 
 #pragma comment(lib, "wsock32.lib")
 
@@ -32,42 +33,25 @@
 #define MAX_ITEMS_IN_ROOM		20
 #define MAX_ITEMS_IN_BACKPACK	50
 
+#define OPTION_MOVE_NORTH 1
+#define OPTION_MOVE_SOUTH 2
+#define OPTION_MOVE_EAST 3
+#define OPTION_MOVE_WEST 4
+#define OPTION_MOVE_UP 5
+#define OPTION_MOVE_DOWN 6
+
+#define OPTION_UNLOCK_NORTH 7
+#define OPTION_UNLOCK_SOUTH 8
+#define OPTION_UNLOCK_EAST 9 
+#define OPTION_UNLOCK_WEST 10
+#define OPTION_UNLOCK_UP 11
+#define OPTION_UNLOCK_DOWN 12
+
 #define OPTION_BASE_FOR_READS 200
 #define OPTION_BASE_FOR_PICKUPS 500
 #define OPTION_BASE_FOR_DROPS 800
 #define OPTION_BASE_FOR_DOS 1100
 #define OPTION_BASE_FOR_EVENTS 1300
-
-#define MAX_ROOMS 500
-char rooms_visited[MAX_ROOMS][5];
-
-#define MAX_KEYS
-
-enum typeofroom
-{
-	ROOM_NONE = 0,
-	ROOM_LECTURE_SMALL = 1,
-	ROOM_LECTURE_MEDIUM = 2,
-	ROOM_LECTURE_LARGE = 3,
-	ROOM_CORRIDOR = 4,
-	ROOM_LAB_SMALL = 5,
-	ROOM_LAB_MEDIUM = 6,
-	ROOM_LAB_LARGE = 7,
-	ROOM_MEETING_ROOM = 8,
-	ROOM_SEMINAR = 9,
-	ROOM_HIVE = 10, //one per floor
-	ROOM_COFFEESHOP = 11, //one
-	ROOM_LIBRARY = 12, //only one
-	ROOM_SHOP_SELL = 13,
-	ROOM_SHOP_BUY = 14,
-	ROOM_SHOP_BUYSELL = 15,
-	ROOM_OFFICE = 16, //maybe only one door
-	ROOM_LOBBY = 17, //Only one
-	ROOM_EXIT = 18, //only one
-	ROOM_STAIRS = 19,
-	ROOM_ENTRANCE = 20 //only one
-};
-
 
 enum directions
 {
@@ -180,7 +164,7 @@ void sentOption(int option, int key)
 	char buffer[100];
 
 	sprintf(buffer, "Option %d, %x", option, key);
-	sendto(sock, buffer, strlen(buffer), 0, (SOCKADDR *)&server_addr, sizeof(SOCKADDR));
+	sendto(sock, buffer, strlen(buffer), 0, (SOCKADDR*)&server_addr, sizeof(SOCKADDR));
 }
 
 
@@ -188,119 +172,250 @@ void sentOption(int option, int key)
 /********* Your tactics code starts here *********************/
 /*************************************************************/
 
-#define OPTION_MOVE_NORTH 1
-#define OPTION_MOVE_SOUTH 2
-#define OPTION_MOVE_EAST 3
-#define OPTION_MOVE_WEST 4
-#define OPTION_MOVE_UP 5
-#define OPTION_MOVE_DOWN 6
+#define KNOWN_KEYS 20
 
-#define OPTION_UNLOCK_NORTH 7
-#define OPTION_UNLOCK_SOUTH 8
-#define OPTION_UNLOCK_EAST 9
-#define OPTION_UNLOCK_WEST 10
-
+int known_keys[KNOWN_KEYS] = {0x200F, 0xBCD5, 0xE4A8, 0x71DA,
+							  0x29FC, 0xA100, 0xBE27, 0x9F4A,
+							  0x8E28, 0xD75B, 0x090D, 0x0172,
+							  0xD2F7, 0xC567, 0x8FD4, 0xFD5A, 
+							  0x200F, 0xBCD5, 0xE4A8, 0x71DA};
 
 int option_count = 0;
 char room_name[10] = " ";
 
-int rooms_recorded = 0;
+int rooms_visited[5][10][10];
+int doors_tried[5][10][10][4];
+int keys_tried[5][10][10][4];
 
-int saved_keys[MAX_KEYS]; //What is the max number of keys (check definition)
-int number_of_saved_keys = 0;
+int use_key;
 
-int move = 0;
+int try_key = -1;
 
-int tryKey = -1;
+void initRooms()
+{
+	int floor;
+	int ns;
+	int ew;
+	int door;
 
-int last_direction = DIRECTION_NORTH;
+	for (floor = 0; floor < 5; floor++)
+	{
+		for (ns = 0; ns < 10; ns++)
+		{
+			for (ew = 0; ew < 10; ew++)
+			{
+				rooms_visited[floor][ns][ew] = 0;
+
+				for (door = 0; door < 4; door++)
+				{
+					doors_tried[floor][ns][ew][door] = -1;
+					keys_tried[floor][ns][ew][door] = 0;
+				}
+			}
+		}
+	}
+}
+
+int bestDirection()
+{
+	int best_direction = -1;
+	int room_visits = 20000;
+	int floor;
+	int ns;
+	int ew;
+
+	if (sscanf(room.name, "%1dY%1d%1d", &floor, &ns, &ew) == 3)
+	{
+		if (room.direction[DIRECTION_NORTH] == DIRECTION_OPEN)
+		{
+			if (rooms_visited[floor][ns - 1][ew] < room_visits)
+			{
+				room_visits = rooms_visited[floor][ns - 1][ew];
+				best_direction = OPTION_MOVE_NORTH;
+			}
+		}
+
+		if (room.direction[DIRECTION_SOUTH] == DIRECTION_OPEN)
+		{
+			if (rooms_visited[floor][ns + 1][ew] < room_visits)
+			{
+				room_visits = rooms_visited[floor][ns + 1][ew];
+				best_direction = OPTION_MOVE_SOUTH;
+			}
+		}
+
+		if (room.direction[DIRECTION_EAST] == DIRECTION_OPEN)
+		{
+			if (rooms_visited[floor][ns][ew + 1] < room_visits)
+			{
+				room_visits = rooms_visited[floor][ns][ew + 1];
+				best_direction = OPTION_MOVE_EAST;
+			}
+		}
+
+		if (room.direction[DIRECTION_WEST] == DIRECTION_OPEN)
+		{
+			if (rooms_visited[floor][ns][ew - 1] < room_visits)
+			{
+				room_visits = rooms_visited[floor][ns][ew - 1];
+				best_direction = OPTION_MOVE_WEST;
+			}
+		}
+
+		if (room.direction[DIRECTION_UP] == DIRECTION_OPEN)
+		{
+			if (rooms_visited[floor + 1][ns][ew] < room_visits)
+			{
+				room_visits = rooms_visited[floor + 1][ns][ew];
+				best_direction = OPTION_MOVE_UP;
+			}
+		}
+
+		if (room.direction[DIRECTION_DOWN] == DIRECTION_OPEN)
+		{
+			if (rooms_visited[floor - 1][ns][ew] < room_visits)
+			{
+				room_visits = rooms_visited[floor - 1][ns][ew];
+				best_direction = OPTION_MOVE_DOWN;
+			}
+		}
+	}
+
+	return best_direction;
+}
+
+
+
+int unlockDoor(int* use_key)
+{
+	int door;
+	int move = -1;
+	int key;
+	int floor;
+	int ns;
+	int ew;
+
+	if (sscanf(room.name, "%1dY%1d%1d", &floor, &ns, &ew) == 3)
+	{
+		for (door = 0; door < 4; door++)
+		{
+			if (room.direction[door] == DIRECTION_LOCKED)
+			{
+				doors_tried[floor][ns][ew][door]++;
+				key = doors_tried[floor][ns][ew][door];
+				if (key < KNOWN_KEYS)
+				{
+					move = OPTION_UNLOCK_NORTH + door;
+					//sentOption(move, known_keys[key]);
+					*use_key = known_keys[key];
+					printf("Move = %d, key = 0x%4X\n", move, known_keys[key]);
+					keys_tried[floor][ns][ew][door] = known_keys[key];
+					return move;
+				}
+			}
+		}
+	}
+
+	return move;
+}
+
+
+void saveKeys()
+{
+	int floor;
+	int ns;
+	int ew;
+	int door;
+
+	for (floor = 0; floor < 5; floor++)
+	{
+		for (ns = 0; ns < 10; ns++)
+		{
+			for (ew = 0; ew < 10; ew++)
+			{
+				for (door = 0; door < 4; door++)
+				{
+					//					if ((keys_tried[floor][ns][ew][door] > 0) && (room.direction[door] == DIRECTION_OPEN))
+					if ((doors_tried[floor][ns][ew][door] >= 0) && (doors_tried[floor][ns][ew][door] < KNOWN_KEYS) && (room.direction[door] == DIRECTION_OPEN))
+					{
+						printf("Room %dY%d%d Door %d Key 0x%4X\n", floor, ns, ew, door, keys_tried[floor][ns][ew][door]);
+					}
+				}
+			}
+		}
+	}
+	getchar();
+	getchar();
+	getchar();
+	getchar();
+}
+
+int getRandonMove()
+{
+	int move;
+
+	if (strcmp(room_name, room.name) != 0) option_count = 0;
+	move = options[option_count];
+	option_count = (option_count + 1) % number_of_options;
+
+	return move;
+}
+
+
+int pickupStuff()
+{
+	int move = -1;
+	int i;
+
+	if (room.number_of_items > 0)
+	{
+		for (i = 0; i < room.number_of_items; i++)
+		{
+			if (room.items[i].value > 0)
+			{
+				printf("Move = %d\n", OPTION_BASE_FOR_PICKUPS + room.items[i].number);
+				move = OPTION_BASE_FOR_PICKUPS + room.items[i].number;
+				return move;
+			}
+
+		}
+	}
+
+	return move;
+}
+
 
 void yourMove()
 {
-	if (room.direction[DIRECTION_NORTH] == DIRECTION_OPEN)
+	int move = -1;  // no valid move assigned yet
+	int i;
+	char chr;
+	int floor;
+	int ns;
+	int ew;
+
+	if (sscanf(room.name, "%1dY%1d%1d", &floor, &ns, &ew) == 3)
 	{
-		sentOption(OPTION_MOVE_NORTH, 0);
-		last_direction = DIRECTION_NORTH;
-	}
-	else if (room.direction[DIRECTION_SOUTH] == DIRECTION_OPEN)
-	{
-		sentOption(OPTION_MOVE_SOUTH, 0);
-		last_direction = DIRECTION_SOUTH;
-	}
-	else if (room.direction[DIRECTION_EAST] == DIRECTION_OPEN)
-	{
-		sentOption(OPTION_MOVE_EAST, 0);
-		last_direction = DIRECTION_EAST;
-	}
-	else if (room.direction[DIRECTION_WEST] == DIRECTION_OPEN)
-	{
-		sentOption(OPTION_MOVE_WEST, 0);
-		last_direction = DIRECTION_WEST;
-	}
-	else if (room.direction[DIRECTION_UP] == DIRECTION_OPEN)
-	{
-		sentOption(OPTION_MOVE_UP, 0);
-		last_direction = DIRECTION_UP;
-	}
-	else if (room.direction[DIRECTION_DOWN] == DIRECTION_OPEN)
-	{
-		sentOption(OPTION_MOVE_DOWN, 0);
-		last_direction = DIRECTION_DOWN;
-	}
-	else
-	{
-		sentOption(OPTION_MOVE_NORTH, 0);
-		last_direction = DIRECTION_NORTH;
-	}
-	
-	
-	if (strcmp(room_name, room.name) != 0) option_count = 0;
-	sentOption(options[option_count], 0x1234);
-	option_count = (option_count + 1) % number_of_options;
-	
-	//strcpy(rooms_visited[rooms_recorded], Room.name); //Not to enter a visisted an explored room
-	//rooms_recorded++;                                 //****Error with Room.name****
-	
-	if (room.direction[DIRECTION_NORTH] == 0) //North door locked
-	{
-		tryKey++;
-		sentOption(7, tryKey);  //option , key
-	}
-	else if (room.direction[DIRECTION_NORTH] == 1) //North door unlocked
-	{
-		printf("Key = %04X\n", tryKey);
-		getchar();
+		rooms_visited[floor][ns][ew]++;  // record where you have been
 	}
 
-	switch (move)
+	if (move == -1) move = pickupStuff();
+	if (move == -1) move = unlockDoor(&use_key); // Didn't pick anything up, so try unlocking a door
+	if (move == -1) move = bestDirection();      // it didn't try to unlock a door, so move in best direction
+	if (move == -1) move = getRandonMove();      // always returns a valid move
+
+	sentOption(move, use_key);
+	printf("Move = %d\n", move);
+
+
+
+	if (_kbhit())
 	{
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-		sentOption(OPTION_MOVE_WEST, 0);
-		break;
-
-	case 4:
-	case 5:
-		sentOption(OPTION_MOVE_SOUTH, 0);
-		break;
-
-	case 6:
-		sentOption(OPTION_BASE_FOR_PICKUPS + 38, 0); //Pick up gold bar (item 38)
-		break;
-
-	case 7:
-		sentOption(OPTION_BASE_FOR_READS + 61, 0); //Read Raspberry Pi code coobook (item 61)
-		break;
-
-	case 8:
-		sentOption(OPTION_BASE_FOR_PICKUPS + 61, 0); //Pickup Raspberry Pi coobook (item 61)
-		break;
-
-	default:
-		sentOption(OPTION_MOVE_WEST, 0); //Just do something
-		break;
+		chr = getchar();
+		if (chr == 's')
+		{
+			saveKeys();
+		}
 	}
 }
 
@@ -308,6 +423,7 @@ void yourMove()
 /*************************************************************/
 /********* Your tactics code ends here ***********************/
 /*************************************************************/
+
 
 
 int getTokens(char* instring, char seperator)
@@ -404,7 +520,7 @@ int getTokens(char* instring, char seperator)
 
 
 
-bool getline(FILE *fp, char *buffer)
+bool getline(FILE* fp, char* buffer)
 {
 	bool rc;
 	bool collect;
@@ -550,13 +666,13 @@ void communicate_with_server()
 
 
 	sprintf_s(buffer, "Register  %s %s %s", STUDENT_NUMBER, STUDENT_FIRSTNAME, STUDENT_FAMILYNAME);
-	sendto(sock, buffer, strlen(buffer), 0, (SOCKADDR *)&server_addr, sizeof(SOCKADDR));
+	sendto(sock, buffer, strlen(buffer), 0, (SOCKADDR*)&server_addr, sizeof(SOCKADDR));
 
 	while (true)
 	{
 		memset(buffer, '\0', sizeof(buffer));
 
-		if (recvfrom(sock, buffer, sizeof(buffer) - 1, 0, (SOCKADDR *)&client_addr, &len) != SOCKET_ERROR)
+		if (recvfrom(sock, buffer, sizeof(buffer) - 1, 0, (SOCKADDR*)&client_addr, &len) != SOCKET_ERROR)
 		{
 			p = ::inet_ntoa(client_addr.sin_addr);
 
@@ -695,7 +811,7 @@ void communicate_with_server()
 				printRoom();
 				printOptions();
 
-				system("timeout /t 60"); //Comment out to allow the program to run continuously
+				//system("timeout /t 60");
 
 				yourMove();
 			}
@@ -721,6 +837,8 @@ int main()
 	printf("UWE Computer and Network Systems Assignment 2 \n");
 	printf("\n");
 
+	initRooms();
+
 	if (WSAStartup(MAKEWORD(2, 2), &data) != 0) return(0);
 
 	//sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);  // Here we create our socket, which will be a UDP socket (SOCK_DGRAM).
@@ -730,7 +848,7 @@ int main()
 	//}
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);  // Here we create our socket, which will be a UDP socket (SOCK_DGRAM).
-	if (!sock) 
+	if (!sock)
 	{
 		// Creation failed! 
 	}
