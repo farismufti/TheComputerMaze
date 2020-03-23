@@ -172,13 +172,14 @@ void sentOption(int option, int key)
 /********* Your tactics code starts here *********************/
 /*************************************************************/
 
-#define KNOWN_KEYS 20
+#define KNOWN_KEYS 24
 
 int known_keys[KNOWN_KEYS] = {0x200F, 0xBCD5, 0xE4A8, 0x71DA,
 							  0x29FC, 0xA100, 0xBE27, 0x9F4A,
 							  0x8E28, 0xD75B, 0x090D, 0x0172,
 							  0xD2F7, 0xC567, 0x8FD4, 0xFD5A, 
-							  0x200F, 0xBCD5, 0xE4A8, 0x71DA};
+							  0x200F, 0xBCD5, 0xE4A8, 0x71DA,
+							  0x8F32, 0x1AE1, 0x0EB9, 0x43AB};
 
 int option_count = 0;
 char room_name[10] = " ";
